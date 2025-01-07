@@ -1,100 +1,89 @@
-npx create-react-app spotify-clone
-cd spotify-clone
-npm start
-// src/App.js
-import React from 'react';
-
-function App() {
-  return (
-    <div>
-      <header>
-        <h1>Spotify Clone</h1>
-      </header>
-      <main>
-        <p>Welcome to your music streaming service!</p>
-      </main>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Player</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="player">
+        <h1>Music Player</h1>
+        <audio id="audio" controls>
+            <source id="audioSource" src="" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+        <div class="controls">
+            <button id="prev">Previous</button>
+            <button id="next">Next</button>
+        </div>
     </div>
-  );
+
+    <script src="scripts.js"></script>
+</body>
+</html>
+
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
 }
 
-export default App;
-mkdir backend
-cd backend
-npm init -y
-npm install express
-// backend/server.js
-const express = require('express');
-const app = express();
-const port = 3001;
+.player {
+    text-align: center;
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
 
-app.get('/', (req, res) => {
-  res.send('Welcome to the Spotify Clone Backend!');
+.controls {
+    margin-top: 20px;
+}
+
+button {
+    padding: 10px 20px;
+    margin: 0 10px;
+    border: none;
+    background: #007bff;
+    color: #fff;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+const songs = [
+    "song1.mp3",
+    "song2.mp3",
+    "song3.mp3"
+];
+
+let currentIndex = 0;
+const audio = document.getElementById("audio");
+const audioSource = document.getElementById("audioSource");
+
+function loadSong(index) {
+    audioSource.src = `http://localhost:3000/music/${songs[index]}`;
+    audio.load();
+    audio.play();
+}
+
+document.getElementById("prev").addEventListener("click", () => {
+    currentIndex = (currentIndex - 1 + songs.length) % songs.length;
+    loadSong(currentIndex);
 });
 
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});
-// backend/db.js
-const mongoose = require('mongoose');
-
-mongoose.connect('mongodb://localhost:27017/spotify-clone', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
+document.getElementById("next").addEventListener("click", () => {
+    currentIndex = (currentIndex + 1) % songs.length;
+    loadSong(currentIndex);
 });
 
-const db = mongoose.connection;
-db.on('error', console.error.bind(console, 'connection error:'));
-db.once('open', () => {
-  console.log('Connected to MongoDB');
-});
-// backend/models/User.js
-const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
-
-const userSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-});
-
-userSchema.pre('save', async function(next) {
-  const user = this;
-  if (user.isModified('password')) {
-    user.password = await bcrypt.hash(user.password, 8);
-  }
-  next();
-});
-
-const User = mongoose.model('User', userSchema);
-module.exports = User;
-
-// backend/routes/auth.js
-const express = require('express');
-const router = express.Router();
-const User = require('../models/User');
-const jwt = require('jsonwebtoken');
-
-router.post('/register', async (req, res) => {
-  try {
-    const user = new User(req.body);
-    await user.save();
-    const token = jwt.sign({ _id: user._id }, 'secretkey');
-    res.status(201).send({ user, token });
-  } catch (error) {
-    res.status(400).send(error);
-  }
-});
-
-router.post('/login', async (req, res) => {
-  try {
-    const user = await User.findOne({ username: req.body.username });
-    if (!user || !await bcrypt.compare(req.body.password, user.password)) {
-      return res.status(400).send('Invalid credentials');
-    }
-    const token = jwt.sign({ _id: user._id }, 'secretkey');
-    res.send({ user, token });
-  } catch (error) {
-    res.status(500).send(error);
-  }
-});
-
-module.exports = router;
+// Load the first song when the page loads
+loadSong(currentIndex);
