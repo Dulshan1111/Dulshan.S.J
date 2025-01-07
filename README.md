@@ -1,2 +1,3 @@
-# Dulshan.S.J
-This is a music player
+npx create-react-app spotify-clone
+cd spotify-clone
+npm start
